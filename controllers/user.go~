@@ -5,6 +5,7 @@ import (
 	"1million/modules"
 	"1million/tools"
 	"net/http"
+//	"log"
 //	"github.com/gorilla/mux"
 )
 
@@ -24,11 +25,20 @@ func init(){
 // @router /users[GET]
 func (u *UserController) GetAllUsers(w http.ResponseWriter, r *http.Request) {
 	result := &models.Result{}
-	go func(chanr chan []models.User){
-		chanr <- modules.UserModule.GetAllUsers()
-	}(chanr)
-	list := <- chanr
-	result.StatusCode = http.StatusOK
-	result.Data = list
-	tools.RH.GetResult(w, result)
+	go modules.UserModule.GetAllUsers(chanr)
+	// for list := range chanr {
+	// 	log.Println(list)
+	// 	result.StatusCode = http.StatusOK
+	// 	result.Data = list
+	// 	tools.RH.GetResult(w, result)
+	// }
+	for {
+		select {
+		case list, _ := <- chanr :
+			result.StatusCode = http.StatusOK
+			result.Data = list
+			tools.RH.GetResult(w, result)
+			return
+		}
+	}
 }
